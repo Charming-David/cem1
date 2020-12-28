@@ -14,7 +14,8 @@ dx=0.1
 dy=0.1  #空间步长
 dt=0.1  #时间步长
 wl=25
-mu0=1    #free space的介电常数介磁常数
+#free space的介电常数介磁常数
+mu0=1   
 ep0=2
 mu=np.zeros((lx,ly))
 ep=np.zeros((lx,ly))
@@ -50,7 +51,8 @@ for i in range(0,lx-1):
 
 
 #定义E与H scattered field & incident field
-Hx1=np.zeros((lx,ly))   #入射场 follow原来的update equation
+#入射场 follow原来的update equation
+Hx1=np.zeros((lx,ly))   
 Hx2=np.zeros((lx,ly))
 
 Hy1=np.zeros((lx,ly))
@@ -59,10 +61,13 @@ Hy2=np.zeros((lx,ly))
 Ez1=np.zeros((lx,ly))
 Ez2=np.zeros((lx,ly))
 
-Hxs1=np.zeros((lx,ly))   #散射场 follow新的update equation
+#散射场 follow新的update equation
+Hxs1=np.zeros((lx,ly))   
 Hxs2=np.zeros((lx,ly))
+
 Hys1=np.zeros((lx,ly))
 Hys2=np.zeros((lx,ly))
+
 Ezs1=np.zeros((lx,ly))
 Ezs2=np.zeros((lx,ly))
 #画图需要的mesh
