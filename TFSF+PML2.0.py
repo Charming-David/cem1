@@ -95,12 +95,18 @@ for i in range(0,lt-1):     #时间loop
 
 
     for j in range(0,lx-1):
-        for k in range(0,ly-1):         #Hx与Hy的更新（入射场）
-            Hx2[j,k]=Hx1[j,k]-dt/(dy*mu0)*(Ez1[j,k]-Ez1[j,k-1])
-            Hy2[j,k]=Hy1[j,k]+dt/(dx*mu0)*(Ez1[j,k]-Ez1[j-1,k])
+        for k in range(0,ly-1):         #Hx与Hy的更新
+            gm1=(mu[j,k]/dt-sigmam[j,k]/2)/(mu[j,k]/dt+sigmam[j,k]/2)
+            gm2=1/(mu[j,k]/dt+sigmam[j,k]/2)
+            Hx2[j,k]=gm1*Hx1[j,k]-gm2/(dy)*(Ez1[j,k]-Ez1[j,k-1])
+            Hy2[j,k]=gm1*Hy1[j,k]+gm2/(dx)*(Ez1[j,k]-Ez1[j-1,k])
+
     for j in range(0,lx-1):
-        for k in range(0,ly-1):    #Ez的更新（入射场）
-            Ez2[j,k]=Ez1[j,k]+dt/ep0*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
+        for k in range(0,ly-1):    #Ez的更新
+            g1=(ep[j,k]/dt-sigma[j,k]/2)/(ep[j,k]/dt+sigma[j,k]/2)
+            g2=1/(ep[j,k]/dt+sigma[j,k]/2)
+
+            Ez2[j,k]=g1*Ez1[j,k]+g2*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
                 
     #计算完入射场之后开始计算散射场
     for j in range(0,lx-1):
@@ -138,9 +144,9 @@ for i in range(0,lt-1):     #时间loop
         ax.plot_surface(X,Y,Ezs2,cmap='rainbow')
         """
         plt.figure("TFSF")
-        plt.imshow(np.log((Ezs2)**2),cmap='gray_r',vmin=-6, vmax=0)
+        plt.imshow(np.log((Ezs2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),cmap='gray_r',vmin=-6, vmax=0)
         
-        plt.imshow(np.log((Ez2)**2),cmap='gray_r',vmin=-6, vmax=0) #限定cbar的范围
+        #plt.imshow(np.log((Ez2)**2),cmap='gray_r',vmin=-6, vmax=0) #限定cbar的范围
         
         plt.colorbar()
         
