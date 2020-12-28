@@ -109,22 +109,31 @@ for i in range(0,lt-1):     #时间loop
             Ez2[j,k]=g1*Ez1[j,k]+g2*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
                 
     #计算完入射场之后开始计算散射场
+    
     for j in range(0,lx-1):
         for k in range(0,ly-1):         #散射场H
+            if (lxx/2<j<lx-lxx/2)and(lyy/2<k<ly-lyy/2):
+                alpha=1
+            else:
+                alpha=0
             gm1=mu[j,k]/dt+sigmam[j,k]/2
             gm11=(mu[j,k]-mu0)/dt+sigmam[j,k]/2
             gm2=mu[j,k]/dt-sigmam[j,k]/2
             gm22=(mu[j,k]-mu0)/dt-sigmam[j,k]/2
-            Hxs2[j,k]=1/gm1*(gm2*Hxs1[j,k]-(Ezs1[j,k]-Ezs1[j,k-1])/dy-gm11*Hx2[j,k]+gm22*Hx1[j,k])
-            Hys2[j,k]=1/gm1*(gm2*Hys1[j,k]+(Ezs1[j,k]-Ezs1[j-1,k])/dx-gm11*Hy2[j,k]+gm22*Hy1[j,k])
+            Hxs2[j,k]=1/gm1*(gm2*Hxs1[j,k]-(Ezs1[j,k]-Ezs1[j,k-1])/dy+alpha*(-gm11*Hx2[j,k]+gm22*Hx1[j,k]))
+            Hys2[j,k]=1/gm1*(gm2*Hys1[j,k]+(Ezs1[j,k]-Ezs1[j-1,k])/dx+alpha*(-gm11*Hy2[j,k]+gm22*Hy1[j,k]))
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):    #Ez的更新（散射场）
+            if (lxx/2<j<lx-lxx/2)and(lyy/2<k<ly-lyy/2):
+                alpha=1
+            else:
+                alpha=0
             g1=ep[j,k]/dt+sigma[j,k]/2
             g11=(ep[j,k]-ep0)/dt+sigma[j,k]/2
             g2=ep[j,k]/dt-sigma[j,k]/2
             g22=(ep[j,k]-ep0)/dt-sigma[j,k]/2
-            Ezs2[j,k]=1/g1*(g2*Ezs1[j,k]+((Hys2[j+1,k]-Hys2[j,k])/dy-(Hxs2[j,k+1]-Hxs2[j,k])/dx)-g11*Ez2[j,k]+g22*Ez1[j,k])
+            Ezs2[j,k]=1/g1*(g2*Ezs1[j,k]+((Hys2[j+1,k]-Hys2[j,k])/dy-(Hxs2[j,k+1]-Hxs2[j,k])/dx)+alpha*(-g11*Ez2[j,k]+g22*Ez1[j,k]))
     
     Ez2[xx,yy]=np.sin(np.pi*2*i/wl)  #源点不参与更新               
     Ez1[:,:]=Ez2[:,:]
