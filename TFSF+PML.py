@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Dec 28 19:53:00 2020
+
+@author: David Lyu
+"""
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Nov 24 15:08:02 2020
 TFSF test
 @author: lenovo
@@ -10,6 +16,11 @@ from matplotlib import pyplot as plt
 lt=40 #时间长度
 lx=100 
 ly=100  #空间大小
+lyy=36 #PML层
+lxx=36
+lx+=lxx
+ly+=lyy
+
 dx=0.1
 dy=0.1  #空间步长
 dt=0.1  #时间步长
@@ -17,36 +28,37 @@ wl=25
 #free space的介电常数介磁常数
 mu0=1   
 ep0=2
+sigma1=2        #PML内σ
+sigmam1=sigma1*mu0/ep0
 mu=np.zeros((lx,ly))
 ep=np.zeros((lx,ly))
 sigma=np.zeros((lx,ly))
 sigmam=np.zeros((lx,ly))
-gm1=0
-gm2=0
-g1=0
-g2=0
-g11=0
-g22=0
-gm11=0
-gm22=0
+
 #散射物体的位置与大小
 x0=int(lx*3/5)
 y0=int(ly*3/5)
 r=8 #6格
 #定义散射体内的介电常数
-for i in range(0,lx-1):
-    for j in range(0,ly-1):
-        if (i-x0)**2+(j-y0)**2>=r*r:
+for i in range(0,lx):
+    for j in range(0,ly):
+        if (i-x0)**2+(j-y0)**2<=r*r:    #散射物体的参数
+            mu[i,j]=1.5
+            ep[i,j]=2.5
+            sigma[i,j]=10
+            sigmam[i,j]=10
+            
+        elif (lxx/2<i<lx-lxx/2)and(lyy/2<j<ly-lyy/2):   #PML的参数
+            mu[i,j]=mu0
+            ep[i,j]=ep0
+            sigma[i,j]=sigma1
+            sigmam[i,j]=sigmam1
+        else:           #free space的参数
             mu[i,j]=mu0
             ep[i,j]=ep0
             sigma[i,j]=0
             sigmam[i,j]=0
             
-        else:
-            mu[i,j]=1.5
-            ep[i,j]=2.5
-            sigma[i,j]=10
-            sigmam[i,j]=10
             
 
 
@@ -83,12 +95,18 @@ for i in range(0,lt-1):     #时间loop
 
 
     for j in range(0,lx-1):
-        for k in range(0,ly-1):         #Hx与Hy的更新（入射场）
-            Hx2[j,k]=Hx1[j,k]-dt/(dy*mu0)*(Ez1[j,k]-Ez1[j,k-1])
-            Hy2[j,k]=Hy1[j,k]+dt/(dx*mu0)*(Ez1[j,k]-Ez1[j-1,k])
+        for k in range(0,ly-1):         #Hx与Hy的更新
+            gm1=(mu[j,k]/dt-sigmam[j,k]/2)/(mu[j,k]/dt+sigmam[j,k]/2)
+            gm2=1/(mu[j,k]/dt+sigmam[j,k]/2)
+            Hx2[j,k]=gm1*Hx1[j,k]-gm2/(dy)*(Ez1[j,k]-Ez1[j,k-1])
+            Hy2[j,k]=gm1*Hy1[j,k]+gm2/(dx)*(Ez1[j,k]-Ez1[j-1,k])
+
     for j in range(0,lx-1):
-        for k in range(0,ly-1):    #Ez的更新（入射场）
-            Ez2[j,k]=Ez1[j,k]+dt/ep0*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
+        for k in range(0,ly-1):    #Ez的更新
+            g1=(ep[j,k]/dt-sigma[j,k]/2)/(ep[j,k]/dt+sigma[j,k]/2)
+            g2=1/(ep[j,k]/dt+sigma[j,k]/2)
+
+            Ez2[j,k]=g1*Ez1[j,k]+g2*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
                 
     #计算完入射场之后开始计算散射场
     for j in range(0,lx-1):
@@ -100,15 +118,14 @@ for i in range(0,lt-1):     #时间loop
             Hxs2[j,k]=1/gm1*(gm2*Hxs1[j,k]-(Ezs1[j,k]-Ezs1[j,k-1])/dy-gm11*Hx2[j,k]+gm22*Hx1[j,k])
             Hys2[j,k]=1/gm1*(gm2*Hys1[j,k]+(Ezs1[j,k]-Ezs1[j-1,k])/dx-gm11*Hy2[j,k]+gm22*Hy1[j,k])
     for j in range(0,lx-1):
-        for k in range(0,ly-1):    #Ez的更新（散射射场）
+        for k in range(0,ly-1):    #Ez的更新（散射场）
             g1=ep[j,k]/dt+sigma[j,k]/2
             g11=(ep[j,k]-ep0)/dt+sigma[j,k]/2
             g2=ep[j,k]/dt-sigma[j,k]/2
             g22=(ep[j,k]-ep0)/dt-sigma[j,k]/2
             Ezs2[j,k]=1/g1*(g2*Ezs1[j,k]+((Hys2[j+1,k]-Hys2[j,k])/dy-(Hxs2[j,k+1]-Hxs2[j,k])/dx)-g11*Ez2[j,k]+g22*Ez1[j,k])
     
-    
-    
+
     Ez2[xx,yy]=np.sin(np.pi*2*i/wl)  #源点不参与更新               
     Ez1[:,:]=Ez2[:,:]
     Hx1[:,:]=Hx2[:,:]
@@ -128,8 +145,8 @@ for i in range(0,lt-1):     #时间loop
         """
         plt.figure("TFSF")
         plt.imshow(np.log((Ezs2)**2),cmap='gray_r',vmin=-6, vmax=0)
-        
+        """
         plt.imshow(np.log((Ez2)**2),cmap='gray_r',vmin=-6, vmax=0) #限定cbar的范围
-        
+        """
         plt.colorbar()
         

@@ -69,16 +69,9 @@ for i in range(0,lt-1):
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):         #Hx与Hy的更新
-            g1=(ep[j,k]/dt-sigma[j,k]/2)/(ep[j,k]/dt+sigma[j,k]/2)
-            g2=1/(ep[j,k]/dt+sigma[j,k]/2)
+
             gm1=(mu[j,k]/dt-sigmam[j,k]/2)/(mu[j,k]/dt+sigmam[j,k]/2)
             gm2=1/(mu[j,k]/dt+sigmam[j,k]/2)
-            """                
-            if (lyy/2<k<ly-lyy/2)and(lxx/2<j<lx-lxx/2):
-                Hx2[j,k]=Hx1[j,k]-dt/(dy*mu)*(Ez1[j,k]-Ez1[j,k-1])
-                Hy2[j,k]=Hy1[j,k]+dt/(dx*mu)*(Ez1[j,k]-Ez1[j-1,k])
-            else:           #pml层的更新
-            """
             Hx2[j,k]=gm1*Hx1[j,k]-gm2/(dy)*(Ez1[j,k]-Ez1[j,k-1])
             Hy2[j,k]=gm1*Hy1[j,k]+gm2/(dx)*(Ez1[j,k]-Ez1[j-1,k])
 
@@ -86,8 +79,6 @@ for i in range(0,lt-1):
         for k in range(0,ly-1):    #Ez的更新
             g1=(ep[j,k]/dt-sigma[j,k]/2)/(ep[j,k]/dt+sigma[j,k]/2)
             g2=1/(ep[j,k]/dt+sigma[j,k]/2)
-            gm1=(mu[j,k]/dt-sigmam[j,k]/2)/(mu[j,k]/dt+sigmam[j,k]/2)
-            gm2=1/(mu[j,k]/dt+sigmam[j,k]/2)
 
             Ez2[j,k]=g1*Ez1[j,k]+g2*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
                 
