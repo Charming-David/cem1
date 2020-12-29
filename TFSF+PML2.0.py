@@ -13,6 +13,8 @@ TFSF test
 
 import numpy as np
 from matplotlib import pyplot as plt
+import time
+start_time = time.time()
 lt=130 #时间长度
 lx=100 
 ly=100  #空间大小
@@ -26,7 +28,7 @@ dy=0.1  #空间步长
 dt=0.1  #时间步长
 wl=25
 #free space的介电常数介磁常数
-mu0=1   
+mu0=1
 ep0=2
 sigma=2        #PML内σ大小
 sigmam=sigma*mu0/ep0
@@ -56,8 +58,8 @@ for i in range(0,lx):
         if (i-x0)**2+(j-y0)**2<=r*r:    #散射物体的参数（只考虑散射场的）
             mu2[i,j]=1.5
             ep2[i,j]=10
-            sigma2[i,j]=0
-            sigmam2[i,j]=0
+            sigma2[i,j]=20
+            sigmam2[i,j]=20
             
         elif (lxx/2<i<lx-lxx/2)and(lyy/2<j<ly-lyy/2):    #free space的参数（散射场入射场都一样）
             pass
@@ -154,15 +156,13 @@ for i in range(0,lt-1):     #时间loop
 
     if i==lt-2:
         
-        """
-        fig = plt.figure()  #定义新的三维坐标轴
-        ax = plt.axes(projection='3d')
-        ax.plot_surface(X,Y,Ezs2,cmap='rainbow')
-        """
+        
         plt.figure("TFSF")
-        plt.imshow(np.log((Ezs2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),cmap='gray_r',vmin=-6, vmax=0)
+        plt.imshow(np.log((Ezs2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)]+Ez2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),cmap='gray_r',vmin=-12, vmax=0)
         
         #plt.imshow(np.log((Ez2)**2),cmap='gray_r',vmin=-6, vmax=0) #限定cbar的范围
         
         plt.colorbar()
-        
+
+end_time = time.time()
+print('running time: ',end_time-start_time)
