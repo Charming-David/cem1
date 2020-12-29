@@ -28,37 +28,45 @@ wl=25
 #free space的介电常数介磁常数
 mu0=1   
 ep0=2
-sigma1=2        #PML内σ
-sigmam1=sigma1*mu0/ep0
-mu=np.zeros((lx,ly))
-ep=np.zeros((lx,ly))
-sigma=np.zeros((lx,ly))
-sigmam=np.zeros((lx,ly))
+sigma=2        #PML内σ大小
+sigmam=sigma*mu0/ep0
+#入射场的参数
+mu1=np.zeros((lx,ly))
+ep1=np.zeros((lx,ly))
+sigma1=np.zeros((lx,ly))
+sigmam1=np.zeros((lx,ly))
+#散射场的参数
+mu2=np.zeros((lx,ly))
+ep2=np.zeros((lx,ly))
+sigma2=np.zeros((lx,ly))
+sigmam2=np.zeros((lx,ly))
 
 #散射物体的位置与大小
 x0=int(lx*3/5)
 y0=int(ly*3/5)
 r=6 #散射圆柱体半径
 #定义散射体内的介电常数
+mu1[:,:]=mu0
+ep1[:,:]=ep0
+mu2[:,:]=mu0
+ep2[:,:]=ep0
+
 for i in range(0,lx):
     for j in range(0,ly):
-        if (i-x0)**2+(j-y0)**2<=r*r:    #散射物体的参数
-            mu[i,j]=1.5
-            ep[i,j]=2.5
-            sigma[i,j]=10
-            sigmam[i,j]=10
+        if (i-x0)**2+(j-y0)**2<=r*r:    #散射物体的参数（只考虑散射场的）
+            mu2[i,j]=1.5
+            ep2[i,j]=10
+            sigma2[i,j]=0
+            sigmam2[i,j]=0
             
-        elif (lxx/2<i<lx-lxx/2)and(lyy/2<j<ly-lyy/2):    #free space的参数
-            mu[i,j]=mu0
-            ep[i,j]=ep0
-            sigma[i,j]=0
-            sigmam[i,j]=0
-        else:          #PML的参数
-            mu[i,j]=mu0
-            ep[i,j]=ep0
-            sigma[i,j]=sigma1
-            sigmam[i,j]=sigmam1
+        elif (lxx/2<i<lx-lxx/2)and(lyy/2<j<ly-lyy/2):    #free space的参数（散射场入射场都一样）
+            pass
+        else:          #PML的参数（散射场入射场都一样）
+            sigma1[i,j]=sigma
+            sigmam1[i,j]=sigmam
             
+            sigma2[i,j]=sigma
+            sigmam2[i,j]=sigmam
 
 
 #定义E与H scattered field & incident field
@@ -85,8 +93,8 @@ Ezs2=np.zeros((lx,ly))
 #画图需要的mesh
 
 #入射场原点的位置
-xx=int(lx/2)        
-yy=int(ly/2)
+xx=int(lx*2/5)        
+yy=int(ly*2/5)
 
 
 for i in range(0,lt-1):     #时间loop
@@ -94,15 +102,16 @@ for i in range(0,lt-1):     #时间loop
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):         #Hx与Hy的更新
-            gm1=(mu[j,k]/dt-sigmam[j,k]/2)/(mu[j,k]/dt+sigmam[j,k]/2)
-            gm2=1/(mu[j,k]/dt+sigmam[j,k]/2)
+        
+            gm1=(mu1[j,k]/dt-sigmam1[j,k]/2)/(mu1[j,k]/dt+sigmam1[j,k]/2)
+            gm2=1/(mu1[j,k]/dt+sigmam1[j,k]/2)
             Hx2[j,k]=gm1*Hx1[j,k]-gm2/(dy)*(Ez1[j,k]-Ez1[j,k-1])
             Hy2[j,k]=gm1*Hy1[j,k]+gm2/(dx)*(Ez1[j,k]-Ez1[j-1,k])
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):    #Ez的更新
-            g1=(ep[j,k]/dt-sigma[j,k]/2)/(ep[j,k]/dt+sigma[j,k]/2)
-            g2=1/(ep[j,k]/dt+sigma[j,k]/2)
+            g1=(ep1[j,k]/dt-sigma1[j,k]/2)/(ep1[j,k]/dt+sigma1[j,k]/2)
+            g2=1/(ep1[j,k]/dt+sigma1[j,k]/2)
 
             Ez2[j,k]=g1*Ez1[j,k]+g2*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
                 
@@ -114,10 +123,10 @@ for i in range(0,lt-1):     #时间loop
                 alpha=1
             else:
                 alpha=0
-            gm1=mu[j,k]/dt+sigmam[j,k]/2
-            gm11=(mu[j,k]-mu0)/dt+sigmam[j,k]/2
-            gm2=mu[j,k]/dt-sigmam[j,k]/2
-            gm22=(mu[j,k]-mu0)/dt-sigmam[j,k]/2
+            gm1=mu2[j,k]/dt+sigmam2[j,k]/2
+            gm11=(mu2[j,k]-mu0)/dt+sigmam2[j,k]/2
+            gm2=mu2[j,k]/dt-sigmam2[j,k]/2
+            gm22=(mu2[j,k]-mu0)/dt-sigmam2[j,k]/2
             Hxs2[j,k]=1/gm1*(gm2*Hxs1[j,k]-(Ezs1[j,k]-Ezs1[j,k-1])/dy+alpha*(-gm11*Hx2[j,k]+gm22*Hx1[j,k]))
             Hys2[j,k]=1/gm1*(gm2*Hys1[j,k]+(Ezs1[j,k]-Ezs1[j-1,k])/dx+alpha*(-gm11*Hy2[j,k]+gm22*Hy1[j,k]))
 
@@ -127,10 +136,10 @@ for i in range(0,lt-1):     #时间loop
                 alpha=1
             else:
                 alpha=0
-            g1=ep[j,k]/dt+sigma[j,k]/2
-            g11=(ep[j,k]-ep0)/dt+sigma[j,k]/2
-            g2=ep[j,k]/dt-sigma[j,k]/2
-            g22=(ep[j,k]-ep0)/dt-sigma[j,k]/2
+            g1=ep2[j,k]/dt+sigma2[j,k]/2
+            g11=(ep2[j,k]-ep0)/dt+sigma2[j,k]/2
+            g2=ep2[j,k]/dt-sigma2[j,k]/2
+            g22=(ep2[j,k]-ep0)/dt-sigma2[j,k]/2
             Ezs2[j,k]=1/g1*(g2*Ezs1[j,k]+((Hys2[j+1,k]-Hys2[j,k])/dy-(Hxs2[j,k+1]-Hxs2[j,k])/dx)+alpha*(-g11*Ez2[j,k]+g22*Ez1[j,k]))
     
     Ez2[xx,yy]=np.sin(np.pi*2*i/wl)  #源点不参与更新               
