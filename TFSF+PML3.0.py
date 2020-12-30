@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Dec 28 20:34:19 2020
+Created on Wed Dec 30 15:40:12 2020
 
 @author: David Lyu
 """
+# -*- coding: utf-8 -*-
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Nov 24 15:08:02 2020
@@ -92,7 +94,21 @@ Hys2=np.zeros((lx,ly))
 Ezs1=np.zeros((lx,ly))
 Ezs2=np.zeros((lx,ly))
 
-#画图需要的mesh
+#mesh
+gm1=np.zeros((lx,ly))
+gm1[:,:]=(mu1[:,:]/dt-sigmam1[:,:]/2)/(mu1[:,:]/dt+sigmam1[:,:]/2)
+gm2=np.zeros((lx,ly))
+gm2[:,:]=1/(mu1[:,:]/dt+sigmam1[:,:]/2)
+g1=np.zeros((lx,ly))
+g1[:,:]=(ep1[:,:]/dt-sigma1[:,:]/2)/(ep1[:,:]/dt+sigma1[:,:]/2)
+g2=np.zeros((lx,ly))
+g2[:,:]=1/(ep1[:,:]/dt+sigma1[:,:]/2)
+ggm1=mu2[:,:]/dt+sigmam2[:,:]/2
+
+ggm2=mu2[:,:]/dt-sigmam2[:,:]/2
+
+gg1=ep2[:,:]/dt+sigma2[:,:]/2
+gg2=ep2[:,:]/dt-sigma2[:,:]/2
 
 #入射场原点的位置
 xx=int(lx*2/5)        
@@ -104,18 +120,12 @@ for i in range(0,lt-1):     #时间loop
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):         #Hx与Hy的更新
-        
-            gm1=(mu1[j,k]/dt-sigmam1[j,k]/2)/(mu1[j,k]/dt+sigmam1[j,k]/2)
-            gm2=1/(mu1[j,k]/dt+sigmam1[j,k]/2)
-            Hx2[j,k]=gm1*Hx1[j,k]-gm2/(dy)*(Ez1[j,k]-Ez1[j,k-1])
-            Hy2[j,k]=gm1*Hy1[j,k]+gm2/(dx)*(Ez1[j,k]-Ez1[j-1,k])
+            Hx2[j,k]=gm1[j,k]*Hx1[j,k]-gm2[j,k]/(dy)*(Ez1[j,k]-Ez1[j,k-1])
+            Hy2[j,k]=gm1[j,k]*Hy1[j,k]+gm2[j,k]/(dx)*(Ez1[j,k]-Ez1[j-1,k])
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):    #Ez的更新
-            g1=(ep1[j,k]/dt-sigma1[j,k]/2)/(ep1[j,k]/dt+sigma1[j,k]/2)
-            g2=1/(ep1[j,k]/dt+sigma1[j,k]/2)
-
-            Ez2[j,k]=g1*Ez1[j,k]+g2*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
+            Ez2[j,k]=g1[j,k]*Ez1[j,k]+g2[j,k]*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
                 
     #计算完入射场之后开始计算散射场
     
@@ -125,12 +135,9 @@ for i in range(0,lt-1):     #时间loop
                 alpha=1
             else:
                 alpha=0
-            gm1=mu2[j,k]/dt+sigmam2[j,k]/2
-            gm11=(mu2[j,k]-mu0)/dt+sigmam2[j,k]/2
-            gm2=mu2[j,k]/dt-sigmam2[j,k]/2
-            gm22=(mu2[j,k]-mu0)/dt-sigmam2[j,k]/2
-            Hxs2[j,k]=1/gm1*(gm2*Hxs1[j,k]-(Ezs1[j,k]-Ezs1[j,k-1])/dy+alpha*(-gm11*Hx2[j,k]+gm22*Hx1[j,k]))
-            Hys2[j,k]=1/gm1*(gm2*Hys1[j,k]+(Ezs1[j,k]-Ezs1[j-1,k])/dx+alpha*(-gm11*Hy2[j,k]+gm22*Hy1[j,k]))
+
+            Hxs2[j,k]=1/ggm1[j,k]*(ggm2[j,k]*Hxs1[j,k]-(Ezs1[j,k]-Ezs1[j,k-1])/dy+alpha*(-(ggm1[j,k]-mu0/dt)*Hx2[j,k]+(ggm2[j,k]-mu0/dt)*Hx1[j,k]))
+            Hys2[j,k]=1/ggm1[j,k]*(ggm2[j,k]*Hys1[j,k]+(Ezs1[j,k]-Ezs1[j-1,k])/dx+alpha*(-(ggm1[j,k]-mu0/dt)*Hy2[j,k]+(ggm2[j,k]-mu0/dt)*Hy1[j,k]))
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):    #Ez的更新（散射场）
@@ -138,11 +145,8 @@ for i in range(0,lt-1):     #时间loop
                 alpha=1
             else:
                 alpha=0
-            g1=ep2[j,k]/dt+sigma2[j,k]/2
-            g11=(ep2[j,k]-ep0)/dt+sigma2[j,k]/2
-            g2=ep2[j,k]/dt-sigma2[j,k]/2
-            g22=(ep2[j,k]-ep0)/dt-sigma2[j,k]/2
-            Ezs2[j,k]=1/g1*(g2*Ezs1[j,k]+((Hys2[j+1,k]-Hys2[j,k])/dy-(Hxs2[j,k+1]-Hxs2[j,k])/dx)+alpha*(-g11*Ez2[j,k]+g22*Ez1[j,k]))
+
+            Ezs2[j,k]=1/gg1[j,k]*(gg2[j,k]*Ezs1[j,k]+((Hys2[j+1,k]-Hys2[j,k])/dy-(Hxs2[j,k+1]-Hxs2[j,k])/dx)+alpha*(-(gg1[j,k]-ep0/dt)*Ez2[j,k]+(gg2[j,k]-ep0/dt)*Ez1[j,k]))
     
     Ez2[xx,yy]=np.sin(np.pi*2*i/wl)  #源点不参与更新               
     Ez1[:,:]=Ez2[:,:]
@@ -170,3 +174,4 @@ plt.colorbar()
 
 end_time = time.time()
 print('running time: ',end_time-start_time)
+
