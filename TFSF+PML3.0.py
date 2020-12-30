@@ -93,10 +93,10 @@ Ezs2=np.zeros((lx,ly))
 
 #迭代需要的系数
 
-gm1=(mu1[:,:]/dt-sigmam1[:,:]/2)/(mu1[:,:]/dt+sigmam1[:,:]/2)
-gm2=1/(mu1[:,:]/dt+sigmam1[:,:]/2)
-g1=(ep1[:,:]/dt-sigma1[:,:]/2)/(ep1[:,:]/dt+sigma1[:,:]/2)
-g2=1/(ep1[:,:]/dt+sigma1[:,:]/2)
+gm1=(mu1/dt-sigmam1/2)/(mu1/dt+sigmam1/2)
+gm2=1/(mu1/dt+sigmam1/2)
+g1=(ep1/dt-sigma1/2)/(ep1/dt+sigma1/2)
+g2=1/(ep1/dt+sigma1/2)
 
 ggm1=mu2/dt+sigmam2/2
 ggm2=mu2/dt-sigmam2/2
@@ -108,7 +108,6 @@ yy=int(ly*2/5)
 
 #计算
 for i in range(0,lt-1):     #时间loop
-
 
     for j in range(0,lx-1):
         for k in range(0,ly-1):         #入射场Hx与Hy的更新
