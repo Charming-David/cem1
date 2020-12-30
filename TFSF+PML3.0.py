@@ -44,7 +44,6 @@ mu2=np.zeros((lx,ly))
 ep2=np.zeros((lx,ly))
 sigma2=np.zeros((lx,ly))
 sigmam2=np.zeros((lx,ly))
-
 #散射物体的位置与大小
 x0=int(lx*3/5)
 y0=int(ly*3/5)
@@ -54,11 +53,10 @@ mu1[:,:]=mu0
 ep1[:,:]=ep0
 mu2[:,:]=mu0
 ep2[:,:]=ep0
-
 for i in range(0,lx):
     for j in range(0,ly):
         if (i-x0)**2+(j-y0)**2<=r*r:    #散射物体的参数（只考虑散射场的）
-            mu2[i,j]=10
+            mu2[i,j]=2
             ep2[i,j]=10
             sigma2[i,j]=20
             sigmam2[i,j]=20
@@ -71,7 +69,6 @@ for i in range(0,lx):
             
             sigma2[i,j]=sigma
             sigmam2[i,j]=sigmam
-
 
 #定义E与H scattered field & incident field
 #入射场 follow原来的update equation
@@ -94,37 +91,32 @@ Hys2=np.zeros((lx,ly))
 Ezs1=np.zeros((lx,ly))
 Ezs2=np.zeros((lx,ly))
 
-#mesh
-gm1=np.zeros((lx,ly))
-gm1[:,:]=(mu1[:,:]/dt-sigmam1[:,:]/2)/(mu1[:,:]/dt+sigmam1[:,:]/2)
-gm2=np.zeros((lx,ly))
-gm2[:,:]=1/(mu1[:,:]/dt+sigmam1[:,:]/2)
-g1=np.zeros((lx,ly))
-g1[:,:]=(ep1[:,:]/dt-sigma1[:,:]/2)/(ep1[:,:]/dt+sigma1[:,:]/2)
-g2=np.zeros((lx,ly))
-g2[:,:]=1/(ep1[:,:]/dt+sigma1[:,:]/2)
-ggm1=mu2[:,:]/dt+sigmam2[:,:]/2
+#迭代需要的系数
 
-ggm2=mu2[:,:]/dt-sigmam2[:,:]/2
+gm1=(mu1[:,:]/dt-sigmam1[:,:]/2)/(mu1[:,:]/dt+sigmam1[:,:]/2)
+gm2=1/(mu1[:,:]/dt+sigmam1[:,:]/2)
+g1=(ep1[:,:]/dt-sigma1[:,:]/2)/(ep1[:,:]/dt+sigma1[:,:]/2)
+g2=1/(ep1[:,:]/dt+sigma1[:,:]/2)
 
-gg1=ep2[:,:]/dt+sigma2[:,:]/2
-gg2=ep2[:,:]/dt-sigma2[:,:]/2
-
+ggm1=mu2/dt+sigmam2/2
+ggm2=mu2/dt-sigmam2/2
+gg1=ep2/dt+sigma2/2
+gg2=ep2/dt-sigma2/2
 #入射场原点的位置
 xx=int(lx*2/5)        
 yy=int(ly*2/5)
 
-
+#计算
 for i in range(0,lt-1):     #时间loop
 
 
     for j in range(0,lx-1):
-        for k in range(0,ly-1):         #Hx与Hy的更新
+        for k in range(0,ly-1):         #入射场Hx与Hy的更新
             Hx2[j,k]=gm1[j,k]*Hx1[j,k]-gm2[j,k]/(dy)*(Ez1[j,k]-Ez1[j,k-1])
             Hy2[j,k]=gm1[j,k]*Hy1[j,k]+gm2[j,k]/(dx)*(Ez1[j,k]-Ez1[j-1,k])
 
     for j in range(0,lx-1):
-        for k in range(0,ly-1):    #Ez的更新
+        for k in range(0,ly-1):    #入射场Ez的更新
             Ez2[j,k]=g1[j,k]*Ez1[j,k]+g2[j,k]*((Hy2[j+1,k]-Hy2[j,k])/dy-(Hx2[j,k+1]-Hx2[j,k])/dx)
                 
     #计算完入射场之后开始计算散射场
@@ -135,7 +127,6 @@ for i in range(0,lt-1):     #时间loop
                 alpha=1
             else:
                 alpha=0
-
             Hxs2[j,k]=1/ggm1[j,k]*(ggm2[j,k]*Hxs1[j,k]-(Ezs1[j,k]-Ezs1[j,k-1])/dy+alpha*(-(ggm1[j,k]-mu0/dt)*Hx2[j,k]+(ggm2[j,k]-mu0/dt)*Hx1[j,k]))
             Hys2[j,k]=1/ggm1[j,k]*(ggm2[j,k]*Hys1[j,k]+(Ezs1[j,k]-Ezs1[j-1,k])/dx+alpha*(-(ggm1[j,k]-mu0/dt)*Hy2[j,k]+(ggm2[j,k]-mu0/dt)*Hy1[j,k]))
 
@@ -161,14 +152,16 @@ for i in range(0,lt-1):     #时间loop
     
         
         
-plt.figure("TFSF")
+plt.figure("TFSF+")
 plt.subplot(2,2,1)
-plt.imshow(np.log((Ezs2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)]+Ez2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),vmin=-15, vmax=0)
+plt.imshow(np.log((Ezs2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)]+Ez2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),cmap='gray_r',vmin=-13, vmax=0)
+plt.title('total field')
 plt.subplot(2,2,2)
-plt.imshow(np.log((Ezs2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),vmin=-15, vmax=0)        
+plt.imshow(np.log((Ezs2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),cmap='gray_r',vmin=-13, vmax=0)        
+plt.title('scattered field')
 plt.subplot(2,2,3)
-plt.imshow(np.log((Ez2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),vmin=-15, vmax=0)
-        #plt.imshow(np.log((Ez2)**2),cmap='gray_r',vmin=-6, vmax=0) #限定cbar的范围
+plt.imshow(np.log((Ez2[int(lxx/2):lx-int(lxx/2),int(lyy/2):ly-int(lyy/2)])**2),cmap='gray_r',vmin=-13, vmax=0)
+plt.title('incident field')        #plt.imshow(np.log((Ez2)**2),cmap='gray_r',vmin=-6, vmax=0) #限定cbar的范围
         
 plt.colorbar()
 
